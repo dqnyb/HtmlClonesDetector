@@ -28,6 +28,13 @@ from scipy.spatial.distance import cosine
 # Gestalt pattern matching algorithm
 # Ideea : Comparam doua secvente in paralel si o gasim pe cea mai lunga subsecv comuna si apelam recursiv pe celelalte ramase - algoritmul este deja implementat in difflib !
 
+def calculate_ssim(imageA, imageB):
+    grayA = cv2.cvtColor(imageA, cv2.COLOR_BGR2GRAY)
+    grayB = cv2.cvtColor(imageB, cv2.COLOR_BGR2GRAY)
+
+    score, _ = ssim(grayA, grayB, full=True)
+    return score
+
 
 def calculate_feature_similarity(image_path1, image_path2):
     base_model = VGG16(weights='imagenet', include_top=False)
@@ -56,6 +63,7 @@ def compare_images_ssim(image1_path, image2_path):
     image1 = cv2.imread(image1_path)
     image2 = cv2.imread(image2_path)
 
+
     image2 = cv2.resize(image2, (image1.shape[1], image1.shape[0]), interpolation=cv2.INTER_AREA)
 
     b1, g1, r1 = cv2.split(image1)
@@ -67,7 +75,7 @@ def compare_images_ssim(image1_path, image2_path):
 
     final_ssim = np.mean([ssim_r, ssim_g, ssim_b])
 
-    print(f"📊 SSIM Final: {final_ssim:.2f}")
+    # print(f"📊 SSIM Final: {final_ssim:.2f}")
 
     return final_ssim
 
@@ -123,20 +131,18 @@ def add_from_tier(file3):
     return [f for f in listdir(file3) if isfile(join(file3, f)) and f != ".DS_Store"]
 
 
-file3 = "tier4"
-onlyfiles = add_from_tier(file3)
-print(onlyfiles)
 
 
 
-def create_images(onlyfiles):
+
+def create_images(onlyfiles,number):
     for i in onlyfiles:
         output_path = os.path.join("images/", f"{i}.png")
-        take_screenshot(os.path.join("tier4", i), output_path)
+        take_screenshot(os.path.join(f"tier{number}", i), output_path)
 
 
 final_list = [];
-def check_all(onlyfiles):
+def check_all(onlyfiles,number):
     remaining_files = onlyfiles[:]
     final_list = []
     # create_images(onlyfiles)
@@ -144,13 +150,19 @@ def check_all(onlyfiles):
         i = remaining_files.pop(0)
         group = [i]
         for m in remaining_files[:]:
-            print(i)
-            print(m)
-            score = similarity_html(f"tier4/{i}", f"tier4/{m}")
+            # print(i)
+            # print(m)
+            score = similarity_html(f"tier{number}/{i}", f"tier{number}/{m}")
+            # print()
             score_image = compare_images_ssim(f"images/{i}.png", f"images/{m}.png")
             feature_similarity = calculate_feature_similarity(f"images/{i}.png", f"images/{m}.png")
-            # print(f"Feature-based similarity (Cosine similarity): {feature_similarity}")
-            if (score > 0.8 and feature_similarity > 0.6) or (score_image > 0.9 and feature_similarity > 0.6):
+            # print(score)
+            # print(score_image)
+            print(f"Feature-based similarity (Cosine similarity): {feature_similarity}")
+            if (score > 0.8 and feature_similarity > 0.6) or (score > 0.3 and score_image > 0.9 and feature_similarity > 0.6):
+                group.append(m)
+                remaining_files.remove(m)
+            elif (feature_similarity > 0.75):
                 group.append(m)
                 remaining_files.remove(m)
 
@@ -158,22 +170,51 @@ def check_all(onlyfiles):
     return final_list
 
 
-create_images(onlyfiles)
-
-final_list = check_all(onlyfiles)
-print(final_list)
-
-
-
-
-# #
-# #
-# score = similarity_html(f"tier3/dvnbysarah.com.html", f"tier3/etawalinherbalmilk.site.html")
-# print(score)
-# # # # #
-# score = compare_images_ssim("images/dvnbysarah.com.html.png", "images/etawalinherbalmilk.site.html.png")
-# print(f"SSIM Similarity Score: {score:.2f}")
+# create_images(onlyfiles)
 #
-# feature_similarity = calculate_feature_similarity("images/dvnbysarah.com.html.png", "images/etawalinherbalmilk.site.html.png")
-# print(f"Feature-based similarity (Cosine similarity): {feature_similarity}")
+# file3 = "tier4"
+# onlyfiles = add_from_tier(file3)
+# create_images(onlyfiles,4)
+# final_list = check_all(onlyfiles,4)
+# print(final_list)
+
+
+
+for i in range(1,5):
+    print(f"Working on file{i} : ")
+    file3 = f"tier{i}"
+    onlyfiles = add_from_tier(file3)
+    print(f"original list : {onlyfiles}")
+    create_images(onlyfiles,i)
+    final_list = check_all(onlyfiles,i)
+    print(f"file{i} : {final_list}")
+
+
+
+# image_dir = "images/"
+# if os.path.exists(image_dir):
+#     for file in os.listdir(image_dir):
+#         file_path = os.path.join(image_dir, file)
+#         if os.path.isfile(file_path):
+#             os.remove(file_path)
+
+
+
+# 'amt-avaluos.online.html', 'amcun3.online.html'
+
+#
+score = similarity_html(f"tier4/1-win-cazinos-club.org.ru.html", f"tier4/mirror-wulkan-russia.org.ru.html")
+print(score)
+# # # #
+score = compare_images_ssim("images/1-win-cazinos-club.org.ru.html.png", "images/mirror-wulkan-russia.org.ru.html.png")
+print(f"SSIM Similarity Score: {score}")
+
+feature_similarity = calculate_feature_similarity("images/1win-official-site-casinoz.org.ru.html.png", "images/mirror-wulkan-russia.org.ru.html.png")
+print(f"Feature-based similarity (Cosine similarity): {feature_similarity}")
+
+imageA = cv2.imread("images/1-win-cazinos-club.org.ru.html.png")
+imageB = cv2.imread("images/mirror-wulkan-russia.org.ru.html.png")
+
+scor = calculate_ssim(imageA,imageB)
+print(scor)
 
