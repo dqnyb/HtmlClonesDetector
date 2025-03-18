@@ -1,67 +1,70 @@
 # HtmlClonesDetector
 
-## Descriere
+## Description
 
-HtmlClonesDetector este un program care, prin mai multe etape complexe, verifica similaritatea dintre mai multe website-uri!  
-Logica de la baza este una foarte interesanta:
+HtmlClonesDetector is a program that verifies the similarity between multiple websites through several complex stages!  
+The underlying logic is quite interesting:
 
-### Etapa 1: Verificarea codului HTML si CSS
+### Stage 1: Checking HTML and CSS Code
 
-- Ca prima etapa, am decis ca ar fi cel mai ok sa verific mai intai similaritatea dintre codul HTML prin libraria **html_similarity**.
-- Aceasta librarie compara doua secvente in paralel, gaseste cea mai lunga subsecventa comuna si apeleaza recursiv pe celelalte ramase.
-- Practic, verifica structura **HTML** si **CSS**.
+- As the first step, I decided that the best approach is to check the similarity between HTML code using the **html_similarity** library.
+- This library compares two sequences in parallel, finds the longest common subsequence, and recursively applies the process to the remaining parts.
+- Essentially, it verifies the **HTML** and **CSS** structure.
 
-### Etapa 2: Compararea vizuala a website-urilor
+### Stage 2: Visual Comparison of Websites
 
-Verificarea codului HTML nu este suficienta, deoarece un website poate arata la fel pentru un utilizator, dar poate fi codat in mai multe feluri.  
-Asadar, am decis ca cel mai bine este sa verificam aspectul propriu-zis.  
+Checking the HTML code is not enough because a website may look the same to a user but can be coded in multiple ways.  
+Therefore, the best approach is to verify the actual appearance.  
 
-Ideea principala a fost sa fac **screenshots** la website-uri, apoi sa le compar pentru a determina similaritatea acestora.  
-Am folosit doua metode:
+The main idea was to take **screenshots** of websites and compare them to determine their similarity.  
+I used two methods:
 
-#### **1. `compare_images_ssim`** (mai putin precisa, dar utila ca indicator)
+#### **1. `compare_images_ssim`** (less precise but useful as an indicator)
 
-- Am citit imaginile prin `cv2`.
-- Am ales una dintre ele si i-am dat resize pentru a putea compara fara pierderi.
-- Am impartit imaginile in canale **RGB** (puteam sa le transform in grayscale, dar am decis sa le las colorate).
-- Am calculat pe rand **SSIM** pentru fiecare canal de culoare RGB pentru a verifica similaritatea.
-- In final, am facut media acestora cu ajutorul librariei NumPy (`np.mean`).
+- Read the images using `cv2`.
+- Resize one of them to enable comparison without losses.
+- Split the images into **RGB** channels (grayscale could be used, but I decided to keep them in color).
+- Compute **SSIM** for each RGB color channel to check similarity.
+- Finally, calculate the average using NumPy (`np.mean`).
 
-#### **2. `calculate_feature_similarity`** (metoda precisa)
+#### **2. `calculate_feature_similarity`** (precise method)
 
-- Aici folosesc ca **base_model** `VGG16` - un model pre-antrenat de retea neuronala, antrenat pe ImageNet pentru a recunoaste diverse obiecte.
-- Am folosit **block5_pool**, o matrice de trasaturi care reprezinta caracteristicile de inalt nivel ale imaginilor (forme, texturi, pattern-uri).
+- Here, I use `VGG16` as the **base_model**—a pre-trained neural network trained on ImageNet to recognize various objects.
+- I use **block5_pool**, a feature matrix that represents high-level characteristics of images (shapes, textures, patterns).
 
-##### `preprocess_image` - Procesarea imaginilor
+##### `preprocess_image` - Image Processing
 
-- Transform size-ul la **224x224** (acesta este input-ul acceptat de `VGG16`).
-- Incarc imaginea intr-un array 3D (`224x224x3`).
-- Aplic `expand_dims` pentru a crea un **batch** de imagini (`1x224x224x3`).
-- Procesez imaginile cu `preprocess_input`.
-- Folosesc `model.predict` pentru a extrage trasaturile vizuale.  
-  - Output-ul produs de stratul `block5_pool` este de dimensiunea **`1x7x7x512`**.
-  - `1` - lotul de imagini, `7x7` - dimensiunea imaginii in spatiul caracteristicilor, `512` - numarul de canale de trasaturi extrase.
-  - Aplic `.flatten()` pentru a transforma matricea 4D intr-un vector 1D.
-- Calculez **similaritatea cosinus** intre vectorii unidimensionali si returnez rezultatul.
+- Resize the image to **224x224** (input size required by `VGG16`).
+- Load the image into a 3D array (`224x224x3`).
+- Apply `expand_dims` to create a **batch** of images (`1x224x224x3`).
+- Process the images with `preprocess_input`.
+- Use `model.predict` to extract visual features.  
+  - The output from the `block5_pool` layer has a size of **`1x7x7x512`**.
+  - `1` - batch of images, `7x7` - image size in feature space, `512` - number of extracted feature channels.
+  - Apply `.flatten()` to transform the 4D matrix into a 1D vector.
+- Compute **cosine similarity** between the 1D vectors and return the result.
+
+---
+
+## Main Logic (`check_all`)
+
+- Step by step, compare a website with the others in the vector.
+- If the similarity is high, add them to the same list and remove them from the main list.
+- Recursively iterate through the array until it is empty.
+- First, create the `onlyfiles` list, then call `check_all`.
+- Finally, add all lists into a main list and display the result.
+- Delete all saved images in **`images/`**.
+
+- PS: All similarity calculation functions return a number between 0 and 1 (indicating how similar they are).
 
 ---
 
-## Logica principala (`check_all`)
+## Observations
 
-- Pas cu pas, verific un website cu celelalte din vectorul meu de site-uri.
-- Daca similaritatea este mare, le adaug in aceeasi lista si le sterg din lista principala.
-- Parcurg recursiv tot array-ul pana cand acesta ramane gol.
-- Mai intai creez lista `onlyfiles`, apoi apelez `check_all`.
-- La final, adaug toate listele intr-o lista principala si afisez rezultatul.
-- Sterg toate imaginile salvate in **`images/`**.
-
-- PS : toate functiile care calculeaza similarity returneaza un numar intre 0 si 1 (care indica cat de similare sunt acestea) 
+ **Execution Time**:  
+- It may take longer to run due to the costly `take_screenshot` process.  
+- Other than that, all other steps execute quickly without issues.  
+- Runtime may take aprox 20 minutes !
+- The project was built and ran on ARM architecture on MAC OS M1 with 0 errors ! 
 ---
 
-## Observatii
-
- **Timp de executie**:  
-- Poate rula mai mult timp, deoarece procesul de `take_screenshot` este costisitor.  
-- In rest, toate celelalte etape se executa rapid fara probleme.  
-
----

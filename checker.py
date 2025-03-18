@@ -2,6 +2,7 @@ import os
 import re
 import cv2
 import numpy as np
+import time
 
 from os import listdir
 from PIL import Image
@@ -24,6 +25,7 @@ from scipy.spatial.distance import cosine
 # Gestalt pattern matching algorithm
 # Ideea : Comparam doua secvente in paralel si o gasim pe cea mai lunga subsecv comuna si apelam recursiv pe celelalte ramase - algoritmul este deja implementat in difflib !
 
+start = time.time()
 
 def calculate_feature_similarity(image_path1, image_path2):
     base_model = VGG16(weights='imagenet', include_top=False)
@@ -127,10 +129,9 @@ for i in range(1,5):
     tiers.append(final_list)
 
 
-print(tiers[0])
-print(tiers[1])
-print(tiers[2])
-print(tiers[3])
+for tier in tiers:
+    print(tier)
+
 
 image_dir = "images/"
 if os.path.exists(image_dir):
@@ -138,4 +139,9 @@ if os.path.exists(image_dir):
         file_path = os.path.join(image_dir, file)
         if os.path.isfile(file_path):
             os.remove(file_path)
+
+
+end = time.time()
+
+print(f"runtime = {end-start}")
 
